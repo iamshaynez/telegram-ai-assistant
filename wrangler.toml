@@ -1,0 +1,22 @@
+name = "telegram-ai-assistant"
+main = "src/index.js"
+compatibility_date = "2024-12-01"
+
+[vars]
+# TELEGRAM_BOT_TOKEN = "your_telegram_bot_token_here"
+# AI_PROVIDER_API_KEY = "your_ai_provider_api_key_here"
+
+# Example for KV Namespace binding
+# [[kv_namespaces]]
+# binding = "MY_KV_NAMESPACE"
+# id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# Example for D1 Database binding
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "my-database"
+# database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+# Example for AI binding (Cloudflare Workers AI)
+[ai]
+binding = "AI"
