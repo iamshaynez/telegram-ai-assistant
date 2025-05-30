@@ -1,137 +1,131 @@
 # Telegram AI Assistant
 
-一个基于 Cloudflare Workers 的智能 Telegram 机器人，支持多种应用场景的自然语言交互。
+A personal Telegram bot powered by AI that provides various utility applications including accounting, translation, and counter functionalities. Built on Cloudflare Workers for serverless deployment.
 
-## 功能特性
+> **⚠️ Personal Project Notice**: This is a personal project tailored to specific needs and configurations. It is **not designed for reuse** and serves as a reference implementation only. The codebase contains hardcoded values, personal API configurations, and specific business logic that may not be applicable to other use cases.
 
-### 📊 记账功能
-- 自然语言记录收支交易
-- 支持多账户和分类管理
-- 与 Actual Budget API 集成
+## Project Overview
 
-### 🌐 翻译功能
-- 支持多语言翻译
-- 智能语言检测
-- 基于 OpenAI API
+This Telegram AI Assistant leverages Large Language Models (LLM) for intent recognition and parameter extraction, enabling natural language interactions with various application modules. The bot processes user messages, identifies intents, and routes requests to appropriate application handlers.
 
-### ✅ 打卡功能 (新增)
-- **打卡记录**: 支持各种项目的打卡记录（运动、学习、读书等）
-- **查询统计**: 查看当前打卡总数和进度
-- **目标设置**: 设置打卡目标并跟踪完成情况
-- **历史记录**: 查看详细的打卡历史
-- **数据管理**: 支持重置和删除打卡数据
-- **自然语言**: 完全支持中文自然语言交互
+## Architecture & Design
 
-## 打卡功能使用示例
+```mermaid
+graph TD
+    A[Telegram User] -->|Message| B[Telegram Webhook]
+    B --> C[Router - index.js]
+    C --> D[Intent Recognizer]
+    D --> E[LLM Client]
+    E -->|Intent| F[Application Handler]
+    F --> G{Route Intent}
+    G -->|accounting_*| H[Accounting Module]
+    G -->|translation| I[Translation Module]
+    G -->|counter| J[Counter Module]
+    H --> K[Actual API]
+    I --> L[AI Translation]
+    J --> M[D1 Database]
+    H --> N[Response Generator]
+    I --> N
+    J --> N
+    N --> O[Telegram API]
+    O --> A
 
-### 基本打卡
-```
-用户: 运动打卡，今天跑步30分钟
-机器人: 运动 打卡成功
-        截止目前 运动 打卡数总计 15 次
-        距离本月目标还有 15次
-```
+    subgraph "AI Layer"
+        D
+        E
+        P[Parameter Recognizer]
+        Q[Prompt Templates]
+    end
 
-### 查询打卡
-```
-用户: 查询运动打卡
-机器人: 截止目前 运动 打卡数总计 15 次
-```
+    subgraph "Data Layer"
+        K
+        M
+        R[Accounting Data]
+    end
 
-### 设置目标
-```
-用户: 设置运动打卡目标30次，本月目标
-机器人: 运动 打卡目标设置成功
-        距离本月目标还有 15次
-```
+    subgraph "Infrastructure"
+        S[Cloudflare Workers]
+        T[D1 Database]
+        U[Environment Variables]
+    end
 
-### 查看历史
-```
-用户: 查看运动打卡历史
-机器人: 打卡历史查询成功，列表如下:
-        > 运动 | count | 2024-01-15 | 跑步30分钟
-        > 运动 | count | 2024-01-14 | 健身1小时
-```
-
-### 重置打卡
-```
-用户: 重置运动打卡
-机器人: 运动 打卡重置成功
-        截止目前 运动 打卡数总计 0 次
+    style A fill:#e1f5fe
+    style E fill:#f3e5f5
+    style H fill:#e8f5e8
+    style I fill:#fff3e0
+    style J fill:#fce4ec
 ```
 
-## 技术架构
+### Core Components
 
-### AI 处理流程
-1. **意图识别**: 使用 OpenAI API 识别用户意图
-2. **参数提取**: 根据意图提取相关参数
-3. **应用路由**: 将请求路由到对应的应用处理器
-4. **业务处理**: 执行具体的业务逻辑
-5. **响应生成**: 生成用户友好的响应消息
+- **Intent Recognition**: AI-powered natural language understanding
+- **Application Router**: Routes recognized intents to appropriate modules
+- **LLM Integration**: Supports multiple AI providers with configurable models
+- **Modular Architecture**: Extensible application modules
+- **Serverless Deployment**: Built for Cloudflare Workers
 
-### 数据存储
-- **记账数据**: Actual Budget API
-- **打卡数据**: Cloudflare D1 数据库
-  - `count_log` 表: 存储打卡记录
-  - `count_goal` 表: 存储打卡目标
+## Supported Application Modules
 
-## 部署配置
+### 🧮 Accounting Module
+Personal finance management with transaction recording, budget tracking, and integration with Actual Budget API for comprehensive financial oversight.
 
-### 环境变量
+### 🌐 Translation Module
+AI-powered multi-language translation service supporting automatic language detection and translation between major languages including Chinese, English, Japanese, Korean, and European languages.
+
+### 📊 Counter Module
+Habit tracking and goal management system with persistent storage, allowing users to track daily activities, set goals, and monitor progress over time.
+
+## Technology Stack
+
+- **Runtime**: Cloudflare Workers
+- **Router**: itty-router
+- **AI Integration**: OpenAI API (configurable)
+- **Database**: Cloudflare D1 (SQLite)
+- **External APIs**: Actual Budget API
+- **Deployment**: Wrangler CLI
+
+## Development Setup
+
 ```bash
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token
-OPENAI_API_KEY=your_openai_api_key
-```
-
-### D1 数据库配置
-在 `wrangler.toml` 中配置:
-```toml
-[[d1_databases]]
-binding = "DB"
-database_name = "counter"
-database_id = "your_database_id"
-```
-
-### 数据库表结构
-```sql
--- 打卡记录表
-CREATE TABLE count_log (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  count_name TEXT NOT NULL,
-  count_type TEXT NOT NULL, -- 'count' 或 'reset'
-  count_value INTEGER NOT NULL,
-  count_date TEXT NOT NULL,
-  count_comment TEXT
-);
-
--- 打卡目标表
-CREATE TABLE count_goal (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  count_name TEXT NOT NULL UNIQUE,
-  goal_comment TEXT,
-  goal_value INTEGER NOT NULL
-);
-```
-
-## 开发指南
-
-### 本地开发
-```bash
+# Install dependencies
 npm install
-npm run dev
-```
 
-### 部署
-```bash
+# Development server
+npm run dev
+
+# Deploy to Cloudflare Workers
 npm run deploy
 ```
 
-### 添加新功能
-1. 在 `src/ai/prompts.js` 中添加意图识别和参数提取提示
-2. 在 `src/applications/` 中创建新的应用处理器
-3. 在 `src/applications/handler.js` 中添加路由
-4. 更新文档和测试
+## Configuration
 
-## 许可证
+The project requires several environment variables:
 
-MIT License
+- `TELEGRAM_BOT_TOKEN`: Telegram Bot API token
+- `OPENAI_API_KEY`: OpenAI API key for LLM services
+- Additional API keys for specific modules (Actual Budget, etc.)
+
+## Project Structure
+
+```
+src/
+├── ai/                 # AI and LLM integration
+│   ├── intentRecognizer.js
+│   ├── parameterRecognizer.js
+│   └── llmClient.js
+├── applications/       # Application modules
+│   ├── accounting.js
+│   ├── translation.js
+│   └── counter.js
+├── services/          # External service integrations
+│   └── telegram.js
+└── index.js           # Main application entry point
+```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+**Disclaimer**: This is a personal project developed for specific use cases and requirements. While the code is open source, it is not intended for direct reuse without significant modifications. Use as reference material only.
