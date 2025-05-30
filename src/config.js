@@ -21,10 +21,26 @@ export const appConfig = {
 
   // AI related configurations (non-sensitive)
   ai: {
-    // Options for OpenAI provider
+    // Options for LLM client
+    llmOptions: {
+      defaultModel: 'qwen/qwen3-30b-a3b', // Default model to use
+      temperature: 0.3, // Default temperature for generation
+      defaultPromptType: 'default', // Default prompt type for intent recognition
+    },
+    
+    // Backward compatibility - will be used by legacy code
     openai_options: {
       model: 'qwen/qwen3-30b-a3b', // Default model
       temperature: 0.3,
+    },
+    
+    // Intent recognition configuration
+    intentRecognition: {
+      // Default prompt type to use for different contexts
+      promptTypes: {
+        accounting: 'accounting', // Use accounting-specific prompts for accounting contexts
+        notes: 'notes', // Use notes-specific prompts for notes contexts
+      }
     },
   },
 

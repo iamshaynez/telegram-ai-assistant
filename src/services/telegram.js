@@ -7,9 +7,11 @@ const TELEGRAM_API_BASE = 'https://api.telegram.org/bot';
  * @param {string|number} chatId The chat ID to send the message to.
  * @param {string} text The message text to send.
  * @param {object} env Environment object containing TELEGRAM_BOT_TOKEN.
+ * @param {object} [options] Optional parameters for the message.
+ * @param {object} [options.reply_markup] Optional reply markup for inline keyboards.
  * @returns {Promise<Response>} The fetch API Response object.
  */
-async function sendMessage(chatId, text, env) {
+async function sendMessage(chatId, text, env, options = {}) {
   if (!env.TELEGRAM_BOT_TOKEN) {
     console.error('TELEGRAM_BOT_TOKEN is not set in environment variables.');
     return Promise.reject('Telegram Bot Token not configured.');
@@ -19,6 +21,7 @@ async function sendMessage(chatId, text, env) {
     chat_id: chatId,
     text: text,
     parse_mode: 'Markdown', // Optional: use 'HTML' or remove for plain text
+    ...options
   };
 
   try {
@@ -45,13 +48,16 @@ async function sendMessage(chatId, text, env) {
 /**
  * Parses the incoming Telegram update to extract relevant information.
  * @param {object} update The Telegram update object.
- * @returns {{message: string|null, chatId: string|number|null, userId: string|number|null, updateId: string|number|null}}
+ * @returns {{message: string|null, chatId: string|number|null, userId: string|number|null, updateId: string|number|null, callbackData: object|null, callbackQueryId: string|null}}
  */
 function handleTelegramUpdate(update) {
   let message = null;
   let chatId = null;
   let userId = null;
   let updateId = update.update_id || null;
+  let callbackData = null;
+  let callbackQueryId = null;
+  let isCallback = false;
 
   if (update.message) {
     chatId = update.message.chat.id;
@@ -63,15 +69,24 @@ function handleTelegramUpdate(update) {
     // else if (update.message.photo) { ... }
   } else if (update.callback_query) {
     // Handle callback queries from inline keyboards
+    isCallback = true;
     chatId = update.callback_query.message.chat.id;
     userId = update.callback_query.from.id;
-    message = update.callback_query.data; // The data associated with the button
-    // It's good practice to answer callback queries
-    // answerCallbackQuery(update.callback_query.id, env); // Implement this if needed
+    callbackQueryId = update.callback_query.id;
+    
+    // Try to parse the callback data as JSON
+    try {
+      callbackData = JSON.parse(update.callback_query.data);
+      // For backward compatibility, also set message to the raw data
+      message = update.callback_query.data;
+    } catch (error) {
+      console.error('Error parsing callback data:', error);
+      message = update.callback_query.data; // Fallback to raw data
+    }
   }
   // Add more handlers for other update types if necessary (e.g., inline_query)
 
-  return { message, chatId, userId, updateId };
+  return { message, chatId, userId, updateId, callbackData, callbackQueryId, isCallback };
 }
 
 /**
@@ -109,9 +124,40 @@ async function answerCallbackQuery(callbackQueryId, env, text = undefined) {
 }
 
 
+/**
+ * Sends a message with a confirmation button to a given chat ID.
+ * @param {string|number} chatId The chat ID to send the message to.
+ * @param {string} text The message text to send.
+ * @param {object} data The data to be attached to the callback button.
+ * @param {object} env Environment object containing TELEGRAM_BOT_TOKEN.
+ * @returns {Promise<Response>} The fetch API Response object.
+ */
+async function sendMessageWithConfirmation(chatId, text, data, env) {
+  // Create a unique callback data string that includes the action and parameters
+  const callbackData = JSON.stringify({
+    action: data.action,
+    params: data.params,
+    timestamp: Date.now() // Add timestamp to make the callback data unique
+  });
+  
+  // Create inline keyboard with confirmation button
+  const replyMarkup = {
+    inline_keyboard: [
+      [
+        { text: "确认", callback_data: callbackData },
+        { text: "取消", callback_data: JSON.stringify({ action: "cancel" }) }
+      ]
+    ]
+  };
+  
+  // Send message with inline keyboard
+  return sendMessage(chatId, text, env, { reply_markup: replyMarkup });
+}
+
 export const telegramApi = {
   sendMessage,
-  answerCallbackQuery
+  answerCallbackQuery,
+  sendMessageWithConfirmation
 };
 
 export { handleTelegramUpdate }; // Exporting separately if used directly in index.js
