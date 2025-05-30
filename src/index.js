@@ -38,6 +38,9 @@ router.post('/', async (request, env, ctx) => { // Modified to handle all POST r
       return new Response('OK');
     }
 
+    // Send processing message to user
+    await telegramApi.sendMessage(chatId, `已开始调用【${intent}】模块，处理中请稍后...`, env);
+
     // 3. Handle application logic based on intent
     const response = await handleApplicationRequest(intent, message, chatId, env);
 
