@@ -13,6 +13,8 @@ export const prompts = {
     - 返回格式必须是有效的 JSON 对象，包含 "intent"
     - 记账相关，intent starts with "accounting", 当前支持如下
       - "accounting_book_transaction": 记录交易
+    - 翻译相关，intent starts with "translation"
+      - "translation": 任何翻译请求
     - 打卡记录相关，使用 intent = "checkin"
     - 如果意图不明确，使用 intent = "unknown_intent"
     - 返回格式必须是有效的 JSON 对象，包含 "intent" 属性`
@@ -41,13 +43,51 @@ export const prompts = {
   - "payee_name": 消费场景，如具体的餐厅，超市，电商平台等
 - 返回格式必须是有效的 JSON 对象，包含 "parameters" 字段。
 - 示例返回格式: {"parameters": {"amount": -100, "account_name": "工商银行储蓄卡", "category_name": "Food", "notes": "午餐", "payee_name": "餐厅"}}`,
-    
-  },
 
+    translation: `你是一个专门处理翻译请求的智能助手。用户已经明确表达了翻译的意图，请专注于提取翻译参数。请用一个包含"parameters"（对象）的 JSON 对象来回应。
+
+- 专注提取以下翻译参数（必须使用这些精确的字段名）:
+  - "text": 需要翻译的文本内容（必填）
+    * 从用户消息中提取实际需要翻译的文本
+    * 去除"翻译"、"translate"等指令词汇
+    * 去除语言指示词如"英文"、"中文"等
+    * 保留原始文本的完整性和格式
   
-  // You can add more prompt categories as needed
-  // For example, prompts for summarization, translation, etc.
-};
+  - "source_language": 源语言代码（选填，默认"auto"）
+    * 支持的语言代码："auto", "zh", "en", "ja", "ko", "fr", "de", "es", "ru", "it", "pt", "ar", "hi", "th", "vi"
+    * 如果用户明确指定源语言，使用对应代码
+    * 如果未指定，设为"auto"进行自动检测
+    * 语言映射：中文/Chinese→zh, 英文/English→en, 日文/Japanese→ja, 韩文/Korean→ko, 法文/French→fr, 德文/German→de, 西班牙文/Spanish→es, 俄文/Russian→ru
+  
+  - "target_language": 目标语言代码（必填）
+    * 使用相同的语言代码列表
+    * 如果用户明确指定目标语言，使用对应代码
+    * 智能推断规则：
+      - 中文文本 → 默认翻译为"en"（英文）
+      - 英文文本 → 默认翻译为"zh"（中文）
+      - 其他语言文本 → 根据上下文推断，优先选择"zh"或"en"
+      - 如果用户说"翻译成/翻译为/translate to + 语言"，提取对应语言代码
+
+- 文本提取示例：
+  * "请翻译：Hello world" → text: "Hello world"
+  * "把这句英文翻译成中文：How are you?" → text: "How are you?"
+  * "翻译一下这个：今天天气很好" → text: "今天天气很好"
+  * "Translate this to French: Good morning" → text: "Good morning"
+
+- 语言识别示例：
+  * "把这句英文翻译成中文" → source_language: "en", target_language: "zh"
+  * "翻译成法语" → target_language: "fr"
+  * "Translate to Japanese" → target_language: "ja"
+  * 无明确指定 → source_language: "auto", target_language: 根据文本内容推断
+
+- 返回格式必须是有效的 JSON 对象，包含 "parameters" 字段。
+- 示例返回格式: 
+  * {"parameters": {"text": "Hello world", "source_language": "en", "target_language": "zh"}}
+  * {"parameters": {"text": "今天天气很好", "source_language": "auto", "target_language": "en"}}
+  * {"parameters": {"text": "Bonjour", "source_language": "fr", "target_language": "zh"}}`,
+    
+  }
+}
 
 // Export individual prompt sections for convenience
 export const intentRecognitionPrompts = prompts.intentRecognition;

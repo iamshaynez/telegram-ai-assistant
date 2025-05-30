@@ -1,5 +1,6 @@
 // src/applications/handler.js
 import { handleAccountingIntent } from './accounting';
+import { handleTranslationIntent } from './translation';
 import { recognizeParameters } from '../ai/parameterRecognizer';
 // Import other application handlers here
 // import { handleOtherAppIntent } from './otherApp';
@@ -22,7 +23,9 @@ export async function handleApplicationRequest(intent, message, chatId, env) {
   
   if (intent.startsWith('accounting')) {
     appHandler = handleAccountingIntent;
-  } 
+  } else if (intent === 'translation') {
+    appHandler = handleTranslationIntent;
+  }
   
   if (!appHandler) {
     // Fallback if no application is specifically matched but intent is known
