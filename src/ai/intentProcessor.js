@@ -3,7 +3,7 @@ import { LLMClient } from './llmClient';
 import { intentRecognitionPrompts } from './prompts';
 
 /**
- * Processes user messages to recognize intents and extract entities.
+ * Processes user messages to recognize intents.
  * This module uses the LLMClient to interact with AI models and process responses.
  */
 export class IntentProcessor {
@@ -19,12 +19,12 @@ export class IntentProcessor {
   }
 
   /**
-   * Processes a user message to recognize intent and extract entities.
+   * Processes a user message to recognize intent.
    * @param {string} message The user's message.
    * @param {object} [options] Optional parameters for processing.
    * @param {string} [options.promptType] The type of prompt to use (default, accounting, etc.)
    * @param {string} [options.model] The model to use for processing.
-   * @returns {Promise<{intent: string|null, entities: object|null, error?: string}>}
+   * @returns {Promise<{intent: string|null, error?: string}>}
    */
   async processMessage(message, options = {}) {
     // Get the appropriate prompt based on the promptType option
@@ -65,7 +65,6 @@ export class IntentProcessor {
       console.error('Error processing intent:', result.error);
       return { 
         intent: 'unknown_intent', 
-        entities: {}, 
         error: result.error || 'Unknown error processing intent'
       };
     }
@@ -77,7 +76,7 @@ export class IntentProcessor {
  * @param {string} message The user's message.
  * @param {object} env Environment variables.
  * @param {object} [options] Optional parameters.
- * @returns {Promise<{intent: string|null, entities: object|null, error?: string}>}
+ * @returns {Promise<{intent: string|null, error?: string}>}
  */
 export async function recognizeIntent(message, env, options = {}) {
   const processor = new IntentProcessor(env, options);

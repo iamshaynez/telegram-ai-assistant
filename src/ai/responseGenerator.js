@@ -3,8 +3,8 @@ import { LLMClient } from './llmClient';
 import { responseGenerationPrompts } from './prompts';
 
 /**
- * Generates responses to user queries based on recognized intent and entities.
- * This module uses the LLMClient to interact with AI models and process responses.
+ * Generates responses to user queries based on recognized intent.
+ * This module uses the LLMClient to interact with AI models and generate contextual responses.
  */
 export class ResponseGenerator {
   /**
@@ -19,16 +19,15 @@ export class ResponseGenerator {
   }
 
   /**
-   * Generates a response based on the user's message, recognized intent, and entities.
+   * Generates a response based on the user's message and recognized intent.
    * @param {string} message The user's original message.
    * @param {string} intent The recognized intent.
-   * @param {object} entities The extracted entities.
-   * @param {object} [options] Optional parameters for processing.
-   * @param {string} [options.promptType] The type of prompt to use (default, accounting, notes).
-   * @param {string} [options.model] The model to use for processing.
+   * @param {object} [options] Optional parameters for response generation.
+   * @param {string} [options.promptType] The type of prompt to use (default, accounting, etc.)
+   * @param {string} [options.model] The model to use for generation.
    * @returns {Promise<{response: string|null, error?: string}>}
    */
-  async generateResponse(message, intent, entities, options = {}) {
+  async generateResponse(message, intent, options = {}) {
     // Determine the appropriate prompt type based on intent or explicit option
     let promptType = options.promptType || 'default';
     
@@ -44,11 +43,10 @@ export class ResponseGenerator {
     // Get the appropriate prompt from the prompts configuration
     const systemPrompt = responseGenerationPrompts[promptType] || responseGenerationPrompts.default;
     
-    // Prepare a context object with intent and entities for the AI
+    // Prepare a context object with intent for the AI
     const context = {
       intent,
-      entities,
-      originalMessage: message
+      message
     };
     
     // Create a message that includes both the original message and the context
@@ -84,15 +82,14 @@ export class ResponseGenerator {
 }
 
 /**
- * A convenience function to generate a response based on intent and entities.
+ * A convenience function to generate a response based on intent.
  * @param {string} message The user's original message.
  * @param {string} intent The recognized intent.
- * @param {object} entities The extracted entities.
  * @param {object} env Environment variables.
  * @param {object} [options] Optional parameters.
  * @returns {Promise<{response: string|null, error?: string}>}
  */
-export async function generateResponse(message, intent, entities, env, options = {}) {
+export async function generateResponse(message, intent, env, options = {}) {
   const generator = new ResponseGenerator(env, options);
-  return generator.generateResponse(message, intent, entities, options);
+  return generator.generateResponse(message, intent, options);
 }

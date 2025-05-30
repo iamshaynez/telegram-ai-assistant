@@ -1,104 +1,227 @@
 // src/applications/accounting.js
-// Placeholder for accounting application logic
-// In a real application, this would interact with a database or a dedicated accounting API.
+// Accounting application logic that interacts with Actual API
+import { accounts, categories } from "./accountingData";
+
+// Constants
+const MESSAGES = {
+  UNKNOWN_ACTION: (action) => `抱歉，我不知道如何处理记账操作：${action}`,
+  TRANSACTION_SUCCESS: (amount, account, category, budget) => 
+    `交易已成功记录！\n---\n金额：${Math.abs(amount)}\n账户：${account}\n分类：${category}\n\n${budget}`,
+  TRANSACTION_ERROR: (error) => `记账失败：${error}`,
+  BUDGET_INFO: (name, spent, balance, percentage) => 
+    `预算科目查询成功！\n---\n预算名称：${name}\n本月总花费：${Math.abs(spent / 100)}\n本月预算剩余：${balance / 100}\n本月预算使用率：${percentage}%`
+};
 
 /**
  * Handles intents related to the accounting application.
- * @param {string} action The recognized action (e.g., 'add_expense', 'get_balance').
- * @param {object} parameters Extracted parameters from the user's message.
- * @param {string|number} chatId The chat ID of the user.
- * @param {object} env Environment variables, might contain API keys or KV binding.
- * @returns {Promise<string>} A message to send back to the user.
+ * @param {string} action The recognized action
+ * @param {object} parameters Extracted parameters from the user's message
+ * @param {string|number} chatId The chat ID of the user
+ * @param {object} env Environment variables with Actual API configuration
+ * @returns {Promise<string>} Response message for the user
  */
 export async function handleAccountingIntent(action, parameters, chatId, env) {
-  console.log(`Accounting: Handling action '${action}' with parameters:`, parameters);
-
-  // Example: Using a KV store for simple data persistence
-  // Ensure you have a KV namespace bound in your wrangler.toml, e.g., binding = "ACCOUNTING_KV"
-  const kv = env.ACCOUNTING_KV;
-  if (!kv) {
-    console.warn('ACCOUNTING_KV namespace not bound. Accounting features will be limited.');
-    // return "Accounting service is not fully configured (KV missing).";
-  }
+  console.log(`Handling accounting action: ${action}`);
 
   switch (action) {
-    case 'add_expense':
-      return await addExpense(parameters, chatId, kv);
-    case 'get_balance':
-      return await getBalance(chatId, kv);
-    // Add more cases for other accounting actions like 'list_expenses', 'get_report', etc.
+    case 'accounting_book_transaction':
+      return await bookTransaction(parameters, env);
     default:
-      return `Sorry, I don't know how to handle the accounting action: ${action}.`;
+      return MESSAGES.UNKNOWN_ACTION(action);
   }
 }
 
 /**
- * Adds an expense for the user.
- * @param {object} parameters Must contain 'amount' and optionally 'item'.
- * @param {string|number} chatId User's chat ID, used as a key for storing data.
- * @param {object} kv The KV namespace instance.
- * @returns {Promise<string>}
+ * Books a transaction in the Actual API.
+ * @param {object} parameters Transaction details (amount, account_name, category_name, etc.)
+ * @param {object} env Environment variables with Actual API configuration
+ * @returns {Promise<string>} Confirmation message
  */
-async function addExpense(parameters, chatId, kv) {
-  const { amount, item = 'Unspecified expense', category, date, currency = 'CNY', payment_method } = parameters;
-
-  // Convert amount to number if it's a string
-  const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-
-  if (typeof numericAmount !== 'number' || isNaN(numericAmount) || numericAmount <= 0) {
-    return 'Please provide a valid amount for the expense. For example: add expense 10 for coffee.';
-  }
-
-  if (!kv) return "Cannot record expense: Accounting storage (KV) is not available.";
-
+async function bookTransaction(parameters, env) {
   try {
-    const userKey = `user_${chatId}_expenses`;
-    let expenses = await kv.get(userKey, { type: 'json' }) || [];
-    const newExpense = {
-      id: Date.now().toString(), // Simple ID
-      amount: numericAmount,
-      description: item,
-      category: category || 'Uncategorized',
-      date: date ? new Date(date).toISOString() : new Date().toISOString(),
-      currency,
-      payment_method: payment_method || 'Not specified'
-    };
-    expenses.push(newExpense);
-    await kv.put(userKey, JSON.stringify(expenses));
-
-    // Update balance (simplified)
-    const balanceKey = `user_${chatId}_balance`;
-    let currentBalance = await kv.get(balanceKey, { type: 'json' }) || 0;
-    currentBalance -= numericAmount;
-    await kv.put(balanceKey, JSON.stringify(currentBalance));
-
-    return `Expense of ${numericAmount} ${currency} for "${item}" recorded. Your new balance is ${currentBalance.toFixed(2)} ${currency}.`;
+    const transaction = createTransactionObject(parameters);
+    const processedTransaction = processTransaction(transaction);
+    
+    await saveTransaction(env, processedTransaction);
+    const budgetMessage = await getBudgetMessage(env, processedTransaction);
+    
+    return MESSAGES.TRANSACTION_SUCCESS(
+      parameters.amount,
+      parameters.account_name,
+      parameters.category_name,
+      budgetMessage
+    );
   } catch (error) {
-    console.error('Error adding expense to KV:', error);
-    return 'Sorry, there was an error recording your expense.';
+    console.error('Transaction booking failed:', error);
+    return MESSAGES.TRANSACTION_ERROR(error.message || error);
   }
 }
 
 /**
- * Gets the current balance for the user.
- * @param {object} parameters May contain 'currency' for display.
- * @param {string|number} chatId User's chat ID, used as a key for retrieving data.
- * @param {object} kv The KV namespace instance.
- * @returns {Promise<string>}
+ * Creates a transaction object from parameters.
+ * @param {object} parameters Transaction parameters
+ * @returns {object} Transaction object
  */
-async function getBalance(parameters, chatId, kv) {
-  const { currency = 'CNY' } = parameters || {};
+function createTransactionObject(parameters) {
+  return {
+    transaction: {
+      amount: parameters.amount,
+      account_name: parameters.account_name,
+      category_name: parameters.category_name,
+      notes: parameters.notes || '',
+      payee: parameters.payee || ''
+    }
+  };
+}
+
+/**
+ * Saves a transaction to the Actual API.
+ * @param {object} env Environment variables
+ * @param {object} transactionData The processed transaction data
+ * @returns {Promise<Response>} The API response
+ */
+async function saveTransaction(env, transactionData) {
+  // Remove name fields as API expects IDs
+  delete transactionData.transaction.account_name;
+  delete transactionData.transaction.category_name;
   
-  if (!kv) return "Cannot retrieve balance: Accounting storage (KV) is not available.";
-
-  try {
-    const balanceKey = `user_${chatId}_balance`;
-    let currentBalance = await kv.get(balanceKey, { type: 'json' }) || 0;
-    return `Your current balance is ${currentBalance.toFixed(2)} ${currency}.`;
-  } catch (error) {
-    console.error('Error getting balance from KV:', error);
-    return 'Sorry, there was an error retrieving your balance.';
+  const url = `${env.ACTUAL_BASE}/accounts/${transactionData.transaction.account}/transactions`;
+  const headers = {
+    "Content-Type": "application/json",
+    "accept": "application/json",
+    "x-api-key": env.ACTUAL_API_KEY,
+  };
+  
+  console.log(`Saving transaction to: ${url}`);
+  
+  const response = await fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(transactionData),
+  });
+  
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
   }
+  
+  return response;
 }
 
-// TODO: Implement other functions like listExpenses, addIncome, etc.
+/**
+ * Gets budget information for a category after a transaction.
+ * @param {object} env Environment variables
+ * @param {object} transactionData The transaction data
+ * @returns {Promise<string>} Formatted budget message
+ */
+async function getBudgetMessage(env, transactionData) {
+  const url = `${env.ACTUAL_BASE}/months/${getCurrentMonthFormatted()}/categories/${transactionData.transaction.category}`;
+  const headers = {
+    "accept": "application/json",
+    "budget-encryption-password": env.ACTUAL_ENCRYPTION_PASSWORD,
+    "x-api-key": env.ACTUAL_API_KEY,
+  };
+
+  console.log(`Fetching budget info from: ${url}`);
+  
+  const response = await fetch(url, {
+    method: "GET",
+    headers,
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Budget API request failed: ${response.status} ${response.statusText}`);
+  }
+
+  const budgetData = await response.json();
+  return formatBudgetMessage(budgetData);
+}
+
+/**
+ * Processes a transaction object by adding date and converting names to IDs.
+ * @param {object} transactionObj The transaction object
+ * @returns {object} The processed transaction object
+ */
+function processTransaction(transactionObj) {
+  if (!transactionObj || typeof transactionObj !== "object") {
+    throw new Error("Invalid transaction object");
+  }
+
+  const { transaction } = transactionObj;
+  
+  // Add current date
+  transaction.date = getCurrentDateFormatted();
+  
+  // Convert account and category names to IDs
+  transaction.account = findIdByName(accounts.data, transaction.account_name);
+  transaction.category = findIdByName(categories.data, transaction.category_name);
+  
+  // Validate that IDs were found
+  if (!transaction.account) {
+    throw new Error(`Account not found: ${transaction.account_name}`);
+  }
+  if (!transaction.category) {
+    throw new Error(`Category not found: ${transaction.category_name}`);
+  }
+  
+  // Convert amount to cents and mark as cleared
+  transaction.amount = Math.round(transaction.amount * 100);
+  transaction.cleared = true;
+
+  return transactionObj;
+}
+
+// Utility Functions
+
+/**
+ * Gets the current date in YYYY-MM-DD format.
+ * @returns {string} The formatted date
+ */
+function getCurrentDateFormatted() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Gets the current month in YYYY-MM format.
+ * @returns {string} The formatted month
+ */
+function getCurrentMonthFormatted() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+}
+
+/**
+ * Finds an ID by name in an array of objects.
+ * @param {Array} items The array to search
+ * @param {string} name The name to find
+ * @returns {string|null} The ID or null if not found
+ */
+function findIdByName(items, name) {
+  if (!Array.isArray(items) || !name) {
+    return null;
+  }
+  
+  const item = items.find(item => item.name === name);
+  return item ? item.id : null;
+}
+
+/**
+ * Creates a formatted budget message from budget data.
+ * @param {object} budgetData The budget data from API
+ * @returns {string} Formatted budget message
+ */
+function formatBudgetMessage(budgetData) {
+  if (!budgetData || !budgetData.data) {
+    return "预算信息获取失败";
+  }
+  
+  const { name, budgeted, spent, balance } = budgetData.data;
+  const spentPercentage = budgeted > 0 ? ((-spent / budgeted) * 100).toFixed(2) : 0;
+
+  return MESSAGES.BUDGET_INFO(name, spent, balance, spentPercentage);
+}

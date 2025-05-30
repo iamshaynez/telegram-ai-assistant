@@ -19,7 +19,7 @@ export { prompts, intentRecognitionPrompts, responseGenerationPrompts } from './
  * 这个模块提供了与大型语言模型 (LLM) 交互的通用接口，包括：
  * 
  * 1. LLMClient - 与 LLM 交互的通用客户端
- * 2. IntentProcessor - 用于识别用户消息中的意图和实体
+ * 2. IntentProcessor - 用于识别用户消息中的意图
  * 3. ResponseGenerator - 用于生成对用户查询的响应
  * 4. 提示词模板 - 用于不同场景的系统提示词
  * 
@@ -42,7 +42,6 @@ export { prompts, intentRecognitionPrompts, responseGenerationPrompts } from './
  *   const responseResult = await generateResponse(
  *     message,
  *     intentResult.intent,
- *     intentResult.entities,
  *     env
  *   );
  *   

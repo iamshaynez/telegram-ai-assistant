@@ -1,7 +1,7 @@
 import { Router } from 'itty-router';
 import { handleTelegramUpdate, telegramApi } from './services/telegram';
 import { recognizeIntent } from './ai/intentRecognizer';
-import { handleApplicationRequest, handleCallbackQuery } from './applications/handler';
+import { handleApplicationRequest } from './applications/handler';
 
 const router = Router();
 
@@ -14,19 +14,14 @@ router.post('/', async (request, env, ctx) => { // Modified to handle all POST r
     console.log('Received update:', JSON.stringify(update, null, 2));
 
     // 1. Get message and other data from Telegram update
-    const { message, chatId, callbackData, callbackQueryId, isCallback } = handleTelegramUpdate(update);
+    const { message, chatId } = handleTelegramUpdate(update);
 
     if (!chatId) {
       console.log('No chatId found in update');
       return new Response('OK'); // Acknowledge Telegram, but nothing to process
     }
 
-    // Handle callback queries (confirmation buttons)
-    if (isCallback && callbackData && callbackQueryId) {
-      console.log('Processing callback query:', callbackData);
-      await handleCallbackQuery(callbackData, chatId, callbackQueryId, env);
-      return new Response('OK');
-    }
+    // Skip callback queries - we only handle regular messages now
 
     // Regular message flow
     if (!message) {
@@ -35,19 +30,16 @@ router.post('/', async (request, env, ctx) => { // Modified to handle all POST r
     }
 
     // 2. Recognize intent using AI
-    const { intent, entities } = await recognizeIntent(message, env);
-    console.log(`Intent: ${intent}, Entities: ${JSON.stringify(entities)}`);
+    const { intent } = await recognizeIntent(message, env);
+    console.log(`Intent: ${intent}`);
 
-    if (!intent) {
-      await telegramApi.sendMessage(chatId, "Sorry, I couldn't understand that.", env);
+    if (!intent || intent === 'unknown_intent') {
+      await telegramApi.sendMessage(chatId, "I'm sorry, I didn't understand that. Could you please rephrase?", env);
       return new Response('OK');
     }
 
-    // Store original message in entities for later parameter recognition
-    entities.original_message = message;
-
     // 3. Handle application logic based on intent
-    const response = await handleApplicationRequest(intent, entities, chatId, env);
+    const response = await handleApplicationRequest(intent, message, chatId, env);
 
     // 4. Send response back to Telegram if it's not a confirmation flow
     if (response && typeof response === 'string') {
