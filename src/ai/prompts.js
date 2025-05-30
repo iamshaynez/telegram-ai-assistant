@@ -27,21 +27,20 @@ export const prompts = {
   - "account_name": 账户名称，必须从以下列表中选择："支付宝", "微信", "工商银行储蓄卡", "工商银行信用卡", "建设银行储蓄卡", "广发银行信用卡 Safari", "中信银行信用卡 万豪", "邮储银行信用卡", "宁波银行信用卡", "南京银行信用卡", "Wise LTD", "杭州银行信用卡"
   - "category_name": 交易类别名称，必须从以下列表中选择：
     * "Food" - 餐饮、食物相关支出
-    * "House" - 房屋、家居相关支出
+    * "House" - 房屋、家居、家里账单等相关支出
     * "Family" - 家庭、亲属相关支出
     * "Digital Bills" - 数字服务、订阅、软件等费用
     * "Transportation" - 交通、出行相关支出
     * "Mortgage" - 房贷、按揭相关支出
     * "Assurance" - 保险相关支出
-    * "Savings" - 储蓄、投资相关
     * "Outing" - 外出、娱乐相关支出
     * "Hobby" - 爱好、兴趣相关支出
     * "Business Travel" - 商务差旅相关支出
     * "Income" - 收入类别（用于正数金额）
-  - "notes": 交易备注（可选）
-  - "payee": 交易对方（可选）
+  - "notes": 交易内容记录
+  - "payee_name": 消费场景，如具体的餐厅，超市，电商平台等
 - 返回格式必须是有效的 JSON 对象，包含 "parameters" 字段。
-- 示例返回格式: {"parameters": {"amount": -100, "account_name": "工商银行储蓄卡", "category_name": "Food", "notes": "午餐", "payee": "餐厅"}}`,
+- 示例返回格式: {"parameters": {"amount": -100, "account_name": "工商银行储蓄卡", "category_name": "Food", "notes": "午餐", "payee_name": "餐厅"}}`,
     
   },
 

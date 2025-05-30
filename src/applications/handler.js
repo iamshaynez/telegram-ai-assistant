@@ -23,13 +23,6 @@ export async function handleApplicationRequest(intent, message, chatId, env) {
   if (intent.startsWith('accounting')) {
     appHandler = handleAccountingIntent;
   } 
-  // Add more routing rules for other applications
-  // else if (intent.startsWith('other_app_')) {
-  //   appHandler = handleOtherAppIntent;
-  // }
-  else if (intent === 'unknown_intent') {
-    return "I'm sorry, I didn't understand that. Could you please rephrase?";
-  }
   
   if (!appHandler) {
     // Fallback if no application is specifically matched but intent is known

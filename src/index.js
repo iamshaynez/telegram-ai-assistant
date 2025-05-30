@@ -34,7 +34,7 @@ router.post('/', async (request, env, ctx) => { // Modified to handle all POST r
     console.log(`Intent: ${intent}`);
 
     if (!intent || intent === 'unknown_intent') {
-      await telegramApi.sendMessage(chatId, "I'm sorry, I didn't understand that. Could you please rephrase?", env);
+      await telegramApi.sendMessage(chatId, "抱歉，我无法识别您的指令。", env);
       return new Response('OK');
     }
 

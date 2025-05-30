@@ -5,8 +5,8 @@ import { accounts, categories } from "./accountingData";
 // Constants
 const MESSAGES = {
   UNKNOWN_ACTION: (action) => `抱歉，我不知道如何处理记账操作：${action}`,
-  TRANSACTION_SUCCESS: (amount, account, category, budget) => 
-    `交易已成功记录！\n---\n金额：${Math.abs(amount)}\n账户：${account}\n分类：${category}\n\n${budget}`,
+  TRANSACTION_SUCCESS: (amount, account, category, payee_name, budget) => 
+    `交易已成功记录！\n---\n金额：${Math.abs(amount)}\n账户：${account}\n分类：${category}\n收款方/付款方：${payee_name || '未指定'}\n\n${budget}`,
   TRANSACTION_ERROR: (error) => `记账失败：${error}`,
   BUDGET_INFO: (name, spent, balance, percentage) => 
     `预算科目查询成功！\n---\n预算名称：${name}\n本月总花费：${Math.abs(spent / 100)}\n本月预算剩余：${balance / 100}\n本月预算使用率：${percentage}%`
@@ -49,6 +49,7 @@ async function bookTransaction(parameters, env) {
       parameters.amount,
       parameters.account_name,
       parameters.category_name,
+      parameters.payee_name,
       budgetMessage
     );
   } catch (error) {
@@ -69,7 +70,7 @@ function createTransactionObject(parameters) {
       account_name: parameters.account_name,
       category_name: parameters.category_name,
       notes: parameters.notes || '',
-      payee: parameters.payee || ''
+      payee_name: parameters.payee_name || ''
     }
   };
 }
@@ -147,7 +148,7 @@ function processTransaction(transactionObj) {
   }
 
   const { transaction } = transactionObj;
-  
+  console.log("Processing transaction:", transaction);
   // Add current date
   transaction.date = getCurrentDateFormatted();
   
