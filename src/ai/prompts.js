@@ -13,9 +13,10 @@ export const prompts = {
     - 返回格式必须是有效的 JSON 对象，包含 "intent"
     - 记账相关，intent starts with "accounting", 当前支持如下
       - "accounting_book_transaction": 记录交易
-    - 翻译相关，intent starts with "translation"
+    - 翻译相关，intent = "translation"
       - "translation": 任何翻译请求
-    - 打卡记录相关，使用 intent = "checkin"
+    - 打卡记录相关，intent = "counter"
+      - "counter": 任何打卡相关请求（打卡、查询打卡、重置打卡、删除打卡、设置打卡目标、查询打卡历史等）
     - 如果意图不明确，使用 intent = "unknown_intent"
     - 返回格式必须是有效的 JSON 对象，包含 "intent" 属性`
   },
@@ -85,6 +86,37 @@ export const prompts = {
   * {"parameters": {"text": "Hello world", "source_language": "en", "target_language": "zh"}}
   * {"parameters": {"text": "今天天气很好", "source_language": "auto", "target_language": "en"}}
   * {"parameters": {"text": "Bonjour", "source_language": "fr", "target_language": "zh"}}`,
+
+    counter: `你是一个专门处理打卡记录的智能助手。用户已经明确表达了打卡相关的意图，请专注于提取打卡参数。请用一个包含"parameters"（对象）的 JSON 对象来回应。
+
+- 专注提取以下打卡参数（必须使用这些精确的字段名）:
+  - "action": 打卡操作类型（必填），必须从以下列表中选择：
+    * "add" - 打卡/记录打卡
+    * "query" - 查询打卡/查看打卡
+    * "reset" - 重置打卡
+    * "delete" - 删除打卡
+    * "set_goal" - 设置打卡目标
+    * "history" - 查询打卡历史
+  - "name": 打卡项目名称（必填），如"运动"、"学习"、"读书"等
+  - "comment": 打卡备注（选填），用于记录具体内容或心得
+  - "goal": 目标数值（仅在action为"set_goal"时需要），必须是正整数
+  - "goal_comment": 目标描述（仅在action为"set_goal"时需要），如"每月目标"、"本周目标"等
+  - "limit": 查询历史记录数量限制（仅在action为"history"时需要），默认为10
+
+- 操作类型识别规则：
+  * 包含"打卡"、"记录"、"签到" → action: "add"
+  * 包含"查询"、"查看"、"显示"、"多少" → action: "query"
+  * 包含"重置"、"清零" → action: "reset"
+  * 包含"删除"、"移除" → action: "delete"
+  * 包含"设置目标"、"目标"、"计划" → action: "set_goal"
+  * 包含"历史"、"记录"、"列表" → action: "history"
+
+- 返回格式必须是有效的 JSON 对象，包含 "parameters" 字段。
+- 示例返回格式: 
+  * {"parameters": {"action": "add", "name": "运动", "comment": "跑步30分钟"}}
+  * {"parameters": {"action": "query", "name": "学习"}}
+  * {"parameters": {"action": "set_goal", "name": "读书", "goal": 30, "goal_comment": "本月目标"}}
+  * {"parameters": {"action": "history", "name": "运动", "limit": 5}}`,
     
   }
 }

@@ -12,11 +12,7 @@ compatibility_date = "2024-12-01"
 # id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
 # Example for D1 Database binding
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "my-database"
-# database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-
-# Example for AI binding (Cloudflare Workers AI)
-[ai]
-binding = "AI"
+[[d1_databases]]
+binding = "DB" # i.e. available in your Worker on env.DB
+database_name = "counter"
+database_id = "6cfad0f8-2f79-4516-881b-711f23d3cbf8"

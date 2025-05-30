@@ -1,6 +1,7 @@
 // src/applications/handler.js
 import { handleAccountingIntent } from './accounting';
 import { handleTranslationIntent } from './translation';
+import { handleCounterIntent } from './counter';
 import { recognizeParameters } from '../ai/parameterRecognizer';
 // Import other application handlers here
 // import { handleOtherAppIntent } from './otherApp';
@@ -25,6 +26,8 @@ export async function handleApplicationRequest(intent, message, chatId, env) {
     appHandler = handleAccountingIntent;
   } else if (intent === 'translation') {
     appHandler = handleTranslationIntent;
+  } else if (intent === 'counter') {
+    appHandler = handleCounterIntent;
   }
   
   if (!appHandler) {
