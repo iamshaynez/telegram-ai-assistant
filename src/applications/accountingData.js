@@ -107,6 +107,12 @@ export const accounts = {
         "name": "杭州银行信用卡",
         "offbudget": false,
         "closed": false
+      },
+      {
+        "id": "7237d0de-f365-415b-9968-1b4640da8d56",
+        "name": "民生银行信用卡 百夫长白金",
+        "offbudget": false,
+        "closed": false
       }
     ]
   }
