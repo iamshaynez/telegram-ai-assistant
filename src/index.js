@@ -40,7 +40,7 @@ router.post('/', async (request, env, ctx) => { // Modified to handle all POST r
         await telegramApi.sendMessage(chatId, `图片文字识别完成，正在分析指令...`, env);
       } else {
         console.error('Failed to extract text from image:', imageResult.error);
-        await telegramApi.sendMessage(chatId, "抱歉，无法识别图片中的文字内容。请尝试发送更清晰的图片或直接输入文字指令。", env);
+        await telegramApi.sendMessage(chatId, `抱歉，无法识别图片中的文字内容。请尝试发送更清晰的图片或直接输入文字指令。${imageResult.error}`, env);
         return new Response('OK');
       }
     } else if (messageType === 'text') {

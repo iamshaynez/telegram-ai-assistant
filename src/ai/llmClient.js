@@ -61,7 +61,7 @@ export class LLMClient {
     const {
       prompt,
       message,
-      model = this.options.defaultModel || 'qwen/qwen3-30b-a3b',
+      model = this.options.defaultModel || 'qwen/qwen3-32b',
       temperature = this.options.temperature || 0.3,
       responseFormat = { type: "json_object" },
       responseProcessor = (response) => response,
@@ -160,7 +160,7 @@ export class LLMClient {
       const result = await this.complete({
         prompt,
         message,
-        model: 'google/gemini-2.5-flash-preview-05-20',
+        model: 'google/gemini-2.5-flash',
         temperature: 0.1,
         responseFormat: { type: "text" },
         responseProcessor: (response) => response,
