@@ -179,7 +179,7 @@ export class LLMClient {
   }
 
   /**
-   * Parses a JSON string response safely.
+   * Parses a JSON string response safely with fault tolerance.
    * @param {string} jsonString The JSON string to parse.
    * @returns {object|null} The parsed object or null if parsing failed.
    */
@@ -188,6 +188,21 @@ export class LLMClient {
       return JSON.parse(jsonString);
     } catch (e) {
       console.error('JSON parsing error:', e);
+      
+      // Try to extract JSON content between first { and last }
+      try {
+        const firstBrace = jsonString.indexOf('{');
+        const lastBrace = jsonString.lastIndexOf('}');
+        
+        if (firstBrace !== -1 && lastBrace !== -1 && firstBrace < lastBrace) {
+          const extractedJson = jsonString.substring(firstBrace, lastBrace + 1);
+          console.log('Attempting to parse extracted JSON:', extractedJson);
+          return JSON.parse(extractedJson);
+        }
+      } catch (extractError) {
+        console.error('Failed to parse extracted JSON:', extractError);
+      }
+      
       return null;
     }
   }
