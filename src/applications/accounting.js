@@ -203,12 +203,27 @@ function getCurrentMonthFormatted() {
  * @returns {string|null} The ID or null if not found
  */
 function findIdByName(items, name) {
+  console.log('findIdByName called with:', {
+    items: items,
+    name: name,
+    itemsLength: Array.isArray(items) ? items.length : 'not an array'
+  });
+  
   if (!Array.isArray(items) || !name) {
+    console.log('findIdByName returning null - invalid parameters');
     return null;
   }
   
   const item = items.find(item => item.name === name);
-  return item ? item.id : null;
+  const result = item ? item.id : null;
+  
+  console.log('findIdByName result:', {
+    foundItem: item,
+    result: result,
+    availableNames: items.map(item => item.name)
+  });
+  
+  return result;
 }
 
 /**
