@@ -61,7 +61,7 @@ export class LLMClient {
     const {
       prompt,
       message,
-      model = this.options.defaultModel || 'z-ai/glm-4.5',
+      model = this.options.defaultModel || 'z-ai/glm-4.5-air',
       temperature = this.options.temperature || 0.3,
       responseFormat = { type: "json_object" },
       responseProcessor = (response) => response,

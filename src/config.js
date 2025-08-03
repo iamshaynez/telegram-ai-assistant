@@ -23,14 +23,14 @@ export const appConfig = {
   ai: {
     // Options for LLM client
     llmOptions: {
-      defaultModel: 'z-ai/glm-4.5', // Default model to use
+      defaultModel: 'z-ai/glm-4.5-air', // Default model to use
       temperature: 0.3, // Default temperature for generation
       defaultPromptType: 'default', // Default prompt type for intent recognition
     },
     
     // Backward compatibility - will be used by legacy code
     openai_options: {
-      model: 'z-ai/glm-4.5', // Default model
+      model: 'z-ai/glm-4.5-air', // Default model
       temperature: 0.3,
     },
     
