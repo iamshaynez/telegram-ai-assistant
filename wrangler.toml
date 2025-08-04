@@ -16,3 +16,10 @@ compatibility_date = "2024-12-01"
 binding = "DB" # i.e. available in your Worker on env.DB
 database_name = "counter"
 database_id = "6cfad0f8-2f79-4516-881b-711f23d3cbf8"
+
+# wrangler.toml (wrangler v3.88.0^)
+[observability.logs]
+enabled = true
+
+
+
