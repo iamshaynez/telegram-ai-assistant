@@ -189,15 +189,17 @@ export class LLMClient {
     } catch (e) {
       console.error('JSON parsing error:', e);
       
-      // Try to extract JSON content between first { and last }
+      // Try to extract JSON content between first { and first } after it
       try {
         const firstBrace = jsonString.indexOf('{');
-        const lastBrace = jsonString.lastIndexOf('}');
-        
-        if (firstBrace !== -1 && lastBrace !== -1 && firstBrace < lastBrace) {
-          const extractedJson = jsonString.substring(firstBrace, lastBrace + 1);
-          console.log('Attempting to parse extracted JSON:', extractedJson);
-          return JSON.parse(extractedJson);
+        if (firstBrace !== -1) {
+          const firstCloseBrace = jsonString.indexOf('}', firstBrace);
+          
+          if (firstCloseBrace !== -1) {
+            const extractedJson = jsonString.substring(firstBrace, firstCloseBrace + 1);
+            console.log('Attempting to parse extracted JSON:', extractedJson);
+            return JSON.parse(extractedJson);
+          }
         }
       } catch (extractError) {
         console.error('Failed to parse extracted JSON:', extractError);
