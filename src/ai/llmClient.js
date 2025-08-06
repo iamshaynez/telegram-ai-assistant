@@ -61,7 +61,7 @@ export class LLMClient {
     const {
       prompt,
       message,
-      model = this.options.defaultModel || 'qwen/qwen3-235b-a22b-thinking-2507',
+      model = this.options.defaultModel || 'qwen/qwen3-235b-a22b-2507',
       temperature = this.options.temperature || 0.3,
       responseFormat = { type: "json_object" },
       responseProcessor = (response) => response,
