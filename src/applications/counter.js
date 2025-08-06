@@ -29,6 +29,8 @@ const MESSAGES = {
  * @returns {Promise<string>} Response message for the user
  */
 export async function handleCounterIntent(intent, parameters, chatId, env) {
+  // print parameters
+  console.log('parameters', parameters);
   console.log(`Handling counter action: ${parameters.action}`);
 
   switch (parameters.action) {
